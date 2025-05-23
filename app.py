@@ -1,69 +1,53 @@
 import streamlit as st
 import tempfile
 import subprocess
+import os
 from pathlib import Path
-import shutil
-import zipfile
-import io
 
-st.title("🔧 Upload & Obfuscate Python Files with PyArmor")
+st.title("🔧 Upload & Compile Python File to .so (with Cleanup)")
 
-uploaded_files = st.file_uploader(
-    "Upload your .py files (multiple allowed)", type=["py"], accept_multiple_files=True
-)
+uploaded_file = st.file_uploader("Upload your .py file", type=["py"])
 
-if uploaded_files and st.button("Obfuscate with PyArmor"):
+if uploaded_file is not None and st.button("Compile with Nuitka"):
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
-        src_dir = temp_path / "src"
-        obf_dir = temp_path / "obf"
-        src_dir.mkdir()
-        obf_dir.mkdir()
 
-        # Save uploaded files
-        for uploaded_file in uploaded_files:
-            file_path = src_dir / uploaded_file.name
-            with open(file_path, "wb") as f:
-                f.write(uploaded_file.read())
+        # Save the uploaded file temporarily
+        source_path = temp_path / uploaded_file.name
+        with open(source_path, "wb") as f:
+            f.write(uploaded_file.read())
 
-        st.write("Files in src_dir:", list(src_dir.glob("**/*.py")))
-
-        st.info("Obfuscating with PyArmor...")
+        st.info("Compiling with Nuitka...")
 
         try:
+            # Compile using Nuitka
             subprocess.run(
                 [
-                    "pyarmor",
-                    "gen",
-                    "--output", str(obf_dir),
-                    "--recursive",
-                    str(src_dir)
+                    "nuitka",
+                    "--module",
+                    "--output-dir=" + str(temp_path),
+                    str(source_path)
                 ],
                 check=True,
                 capture_output=True
             )
+
+            # Find the .so file
+            so_files = list(temp_path.glob("*.so"))
+            if so_files:
+                so_file = so_files[0]
+                st.success(f"✅ Compiled: {so_file.name}")
+                with open(so_file, "rb") as f:
+                    st.download_button(
+                        label="⬇️ Download .so file",
+                        data=f.read(),
+                        file_name=so_file.name,
+                        mime="application/octet-stream"
+                    )
+                # After this `with` block, the temp directory and all files will be deleted
+            else:
+                st.error("❌ Compilation succeeded, but no .so file found.")
+
         except subprocess.CalledProcessError as e:
-            st.error("❌ PyArmor obfuscation failed:")
+            st.error("❌ Compilation failed:")
             st.code(e.stderr.decode())
-        else:
-            st.success("✅ Obfuscation complete.")
-
-            st.write("Files in obf_dir:", list(obf_dir.glob("**/*")))
-
-            # Zip the obf_dir folder
-            zip_buffer = io.BytesIO()
-            with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zipf:
-                for file_path in obf_dir.rglob("*"):
-                    if file_path.is_file():
-                        zipf.write(
-                            file_path,
-                            arcname=str(file_path.relative_to(obf_dir))
-                        )
-            zip_buffer.seek(0)
-
-            st.download_button(
-                label="⬇️ Download obf folder as ZIP",
-                data=zip_buffer,
-                file_name="obf.zip",
-                mime="application/zip"
-            )
