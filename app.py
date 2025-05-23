@@ -61,10 +61,13 @@ if uploaded_files and st.button("Obfuscate & Compile with Nuitka"):
                         check=True,
                         capture_output=True
                     )
-                    # Find the .so file for this .py
+                    # Find the compiled file for this .py (.so on Linux, .pyd on Windows)
                     so_file = py_file.with_suffix(".so")
+                    pyd_file = py_file.with_suffix(".pyd")
                     if so_file.exists():
                         so_files.append(so_file)
+                    elif pyd_file.exists():
+                        so_files.append(pyd_file)
                 except subprocess.CalledProcessError as e:
                     st.error(f"❌ Compilation failed for {py_file.name}:")
                     st.code(e.stderr.decode())
