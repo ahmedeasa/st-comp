@@ -24,6 +24,8 @@ if uploaded_files and st.button("Obfuscate with PyArmor"):
             with open(file_path, "wb") as f:
                 f.write(uploaded_file.read())
 
+        st.write("Files in src_dir:", list(src_dir.glob("**/*.py")))
+
         st.info("Obfuscating with PyArmor...")
 
         try:
@@ -43,6 +45,8 @@ if uploaded_files and st.button("Obfuscate with PyArmor"):
             st.code(e.stderr.decode())
         else:
             st.success("✅ Obfuscation complete.")
+
+            st.write("Files in obf_dir:", list(obf_dir.glob("**/*")))
 
             # Immediately offer downloads for all obfuscated .py files
             obf_files = list(obf_dir.glob("**/*.py"))
