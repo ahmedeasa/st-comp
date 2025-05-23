@@ -3,6 +3,8 @@ import tempfile
 import subprocess
 from pathlib import Path
 import shutil
+import zipfile
+import io
 
 st.title("🔧 Upload & Obfuscate Python Files with PyArmor")
 
@@ -48,17 +50,20 @@ if uploaded_files and st.button("Obfuscate with PyArmor"):
 
             st.write("Files in obf_dir:", list(obf_dir.glob("**/*")))
 
-            # Immediately offer downloads for all obfuscated .py files
-            obf_files = list(obf_dir.glob("**/*"))
-            if obf_files:
-                st.success(f"✅ Obfuscated {len(obf_files)} file(s):")
-                for obf_file in obf_files:
-                    with open(obf_file, "rb") as f:
-                        st.download_button(
-                            label=f"⬇️ Download {obf_file.name}",
-                            data=f.read(),
-                            file_name=obf_file.name,
-                            mime="text/x-python"
+            # Zip the obf_dir folder
+            zip_buffer = io.BytesIO()
+            with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zipf:
+                for file_path in obf_dir.rglob("*"):
+                    if file_path.is_file():
+                        zipf.write(
+                            file_path,
+                            arcname=str(file_path.relative_to(obf_dir))
                         )
-            else:
-                st.error("❌ No obfuscated files were created.")
+            zip_buffer.seek(0)
+
+            st.download_button(
+                label="⬇️ Download obf folder as ZIP",
+                data=zip_buffer,
+                file_name="obf.zip",
+                mime="application/zip"
+            )
