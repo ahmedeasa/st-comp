@@ -32,7 +32,7 @@ if uploaded_files and st.button("Obfuscate with PyArmor"):
             subprocess.run(
                 [
                     "pyarmor",
-                    "obfuscate",
+                    "gen",
                     "--output", str(obf_dir),
                     "--recursive",
                     str(src_dir)
