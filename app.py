@@ -69,6 +69,8 @@ if uploaded_files and st.button("Obfuscate & Compile with Nuitka"):
                     st.error(f"❌ Compilation failed for {py_file.name}:")
                     st.code(e.stderr.decode())
 
+            st.write("Files in obf_dir:", list(obf_dir.glob("**/*")))
+
             if so_files:
                 st.success(f"✅ Compiled {len(so_files)} .so file(s):")
                 for so_file in so_files:
