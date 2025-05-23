@@ -51,7 +51,7 @@ if uploaded_files and st.button("Obfuscate & Compile with Nuitka"):
             for py_file in obf_dir.glob("**/*.py"):
                 st.info(f"Compiling {py_file.name} with Nuitka...")
                 try:
-                    subprocess.run(
+                    result = subprocess.run(
                         [
                             "nuitka",
                             "--module",
@@ -61,6 +61,7 @@ if uploaded_files and st.button("Obfuscate & Compile with Nuitka"):
                         check=True,
                         capture_output=True
                     )
+                    st.code(result.stdout.decode() + "\n" + result.stderr.decode(), language="bash")
                     # Find the compiled file for this .py (.so on Linux, .pyd on Windows)
                     so_file = py_file.with_suffix(".so")
                     pyd_file = py_file.with_suffix(".pyd")
